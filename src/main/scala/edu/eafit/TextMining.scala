@@ -21,20 +21,20 @@ import EnglishStopWords.englishStopWords
 
 object TextMining {
 
-  case class Article(id: Int, title: String, content: String)
+  case class Article(id: Int, title: String, content: String) extends Serializable
 
   @transient lazy val conf: SparkConf = new SparkConf()
     .setMaster("local[*]")
     .setAppName("BigData")
 
-  val spark: SparkSession =
+  @transient val spark: SparkSession =
     SparkSession
       .builder
       .master("local[*]")
       .appName("Text Mining")
       .getOrCreate()
 
-  val sc = spark.sparkContext
+  @transient val sc = spark.sparkContext
   sc.setLogLevel("WARN")
 
   // For implicit conversions like converting RDDs to DataFrames
@@ -61,31 +61,34 @@ object TextMining {
     val articlesRDD: RDD[Article] = df.rdd
       .map(i => Article(i.getAs[Int](0), i.getAs[String](1), i.getAs[String](2)))
 
-     val invertedIndex: RDD[(String, RDD[(Int, Int)])] = (for {
+    val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
       article <- articlesRDD
       text = article.title + article.content
-      word <- text.split(" ").toList
+      word <- text.split(" ")
     } yield (word, (article.id, 1)))
-       .groupByKey
-       .mapValues(_.toList)
-       .mapValues(reduceList)
-       .cache()
-
+      .groupByKey()
+      .mapPartitions{
+        _.map {
+          case(k, v) => (k, v.groupBy(_._1).map(pair => (pair._1, pair._2.map(_._2).sum)).toList)
+          //case(k, v) => (k, reduceList(v.toList))
+        }
+      }.cache()
 
     // Online
     val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
 
     val titles: Map[Int, String] =
-      articlesRDD.collect()
-        .map(article => (article.id, article.title)).toMap
+    articlesRDD
+      .map(article => (article.id, article.title))
+      .collect()
+      .toMap
 
-    val result: (String, Array[(Int, Int)]) = invertedIndex
+    val result: (String, List[(Int, Int)]) = invertedIndex
       .filter(_._1 == search)
-      .mapValues(_.collect())
       .collect()
       .toList.head
 
-    val table: Array[(Int, Int, String)] = for {
+    val table: List[(Int, Int, String)] = for {
       i <- result._2
       title = titles(i._1)
     } yield (i._2, i._1, title)
@@ -95,11 +98,10 @@ object TextMining {
     spark.stop()
   }
 
-  def reduceList(list: List[(Int, Int)]): RDD[(Int, Int)] = {
-    val rdd = sc.parallelize(list)
-    rdd.groupByKey().map(
-      pair => (pair._1, pair._2.sum)
-    )
+  def reduceList(list: List[(Int, Int)]): List[(Int, Int)] = {
+    list.groupBy(_._1).map(
+      pair => (pair._1, pair._2.map(_._2).sum)
+    ).toList
   }
 
   def reducer(k1: (Int, Int), k2: (Int, Int)): Int = k1._2 + k2._2
