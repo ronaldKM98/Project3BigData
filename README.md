@@ -4,6 +4,7 @@
 
 ## Cleaning Datasets
 For this step, special characters, stopwords and words of length one were removed.
-The special characters were removed with regular espressions.
-The stopwords were removed with the Tokenizer and StopWordsRemover libraries from Spark ML.
 
+* The special characters were removed with regular espressions.
+* The stopwords were removed with the Tokenizer and StopWordsRemover libraries from Spark ML.
+* The words of length one were removed
