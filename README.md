@@ -14,9 +14,9 @@
 For this step, special characters, stopwords and words of length one were removed.
 
 * The special characters were removed with the following regular expressions.
-```
-[^a-z\\sA-Z
-```
+  ```
+  [^a-z\\sA-Z]
+  ```
 
 * The stopwords were removed with the Tokenizer and StopWordsRemover libraries from Spark ML.
 * The words of length one were also removed with regular expressions.
