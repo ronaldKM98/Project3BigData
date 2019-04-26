@@ -1,23 +1,17 @@
 package edu.eafit
 
-import java.nio.file.Paths
-
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.STRONG
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.sql._
-import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.functions._
-
-import scala.io._
-
-import org.apache.spark.ml.feature.StopWordsRemover
-import org.apache.spark.sql.SparkSession
-
 // Stop words.
 import EnglishStopWords.englishStopWords
+
+// Apache Spark.
+import org.apache.spark.sql.functions.udf
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._
+import org.apache.spark.{SparkConf}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.{IntegerType}
 
 object TextMining {
 
@@ -43,36 +37,36 @@ object TextMining {
   /** Main function */
   def main(args: Array[String]): Unit = {
     // Read the data.
-    val df: DataFrame =
-      spark
+
+    val df: DataFrame = spark
         .read
         .option(key = "header", value = "true")
         .option(key = "encoding", value = "UTF-8")
-        .option(key = "sep", value = "\t")
+        .option(key = "sep", value = ",")
         .option(key = "inferSchema", value = "true")
-        .csv("src/main/resources/all-the-news/1.csv")
-                      //"src/main/resources/all-the-news/articles2.csv",
-                      //"src/main/resources/all-the-news/articles3.csv")
+        .csv("src/main/resources/all-the-news/articles1.csv")
+        /**"src/main/resources/all-the-news/articles2.csv",
+        "src/main/resources/all-the-news/articles3.csv")*/
         .withColumn("title", lower($"title"))
         .withColumn("content", lower($"content"))
-        .select($"id", $"title", $"content")
+        .select($"id".cast(IntegerType).as("id"), $"title", $"content")
 
     // Build inverted index.
     val articlesRDD: RDD[Article] = df.rdd
       .map(i => Article(i.getAs[Int](0), i.getAs[String](1), i.getAs[String](2)))
 
     val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
-      article <- articlesRDD
-      text = article.title + article.content
-      word <- text.split(" ")
-    } yield (word, (article.id, 1)))
-      .groupByKey()
-      .mapPartitions{
-        _.map {
-          case(k, v) => (k, v.groupBy(_._1).map(pair => (pair._1, pair._2.map(_._2).sum)).toList)
-          //case(k, v) => (k, reduceList(v.toList))
-        }
-      }.cache()
+    article <- articlesRDD
+    text = article.title + article.content
+    word <- text.split(" ")
+  } yield (word, (article.id, 1)))
+  .groupByKey()
+    .mapPartitions{
+      _.map {
+        case(word, list) => (word, list.groupBy(_._1).map(pair => (pair._1, pair._2.map(_._2).sum)).toList)
+        // case(palabra, lista) => (palabra, reduceList(lista.toList))
+      }
+    }.cache() // Save RDD in memory.
 
     // Online
     val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
@@ -93,18 +87,21 @@ object TextMining {
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-    table.foreach(println)
+    sc.parallelize(table)
+      .toDF("Frequency", "ID", "Title")
+      .orderBy(desc("Frequency"))
+      .collect()
+      .foreach(println)
 
     spark.stop()
   }
 
   def reduceList(list: List[(Int, Int)]): List[(Int, Int)] = {
     list.groupBy(_._1).map(
+      //id, list(f)
       pair => (pair._1, pair._2.map(_._2).sum)
     ).toList
   }
-
-  def reducer(k1: (Int, Int), k2: (Int, Int)): Int = k1._2 + k2._2
 
   /**
     * Receives a String and return its clean version without stopwords nor quotation marks.
