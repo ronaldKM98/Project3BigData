@@ -158,6 +158,8 @@ val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
 // COMMAND ----------
 
 // Online
+
+//TODO: Dataframe 
     val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
 
     val titles: Map[Int, String] =
@@ -177,7 +179,7 @@ val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-table.foreach(println)
+table.take(10).foreach(println)
 
 // COMMAND ----------
 
@@ -208,34 +210,50 @@ val news_id: Int = 167499
 
 // COMMAND ----------
 
-implicit val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
+//Take the news thar we are looking for
+val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
+//Take the other news
 val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
 
 // COMMAND ----------
 
+//Similarity function to compare two given articles
 def sim(i: (Int, List[(String, Int)]), j: (Int, List[(String, Int)])): (Int, Int, Int) = {
-  val intersect: List[String] = i._2.map(_._1).intersect(j._2.map(_._1))
+  
+  //words in common
+  val intersect: List[String] = i._2.map(_._1).intersect(j._2.map(_._1)) 
+  
+  //Union between list i and list j
   val total: List[(String, Int)] = i._2 union j._2
 
+  //Total freq --> of all words
   val distance: Int = total.filter(pair => intersect.contains(pair._1)) match {
     case Nil => 0
     case x => x.reduce((elem1, elem2) => (
     elem1._1, elem1._2 + elem2._2))._2 // How to sum consecutive elements.
   }
-
+  
+  //id.  totalFreq number of words in common
   (j._1, distance, intersect.length)
 }
 
 // COMMAND ----------
 
-val simil: RDD[(Int, Int, Int)] = {
+val simil: DataFrame = {
   newsRDD.map(x => sim(inNews, x))
+  .toDF
+  .select($"_1".alias("id"), $"_2".alias("distance"), $"_3".alias("n_words"))
 }
 
 // COMMAND ----------
 
-simil.take(5).foreach(println)
+val sorted: Array[Int] = simil.sort(desc("n_words"), desc("distance"))
+                              .select($"id")
+                              .take(5)
+                              .map(_.getInt(0))
 
 // COMMAND ----------
 
+val cluster: (Int, String, Array[Int]) = (news_id, titles(news_id), sorted)
 
+print(news_id, titles(news_id), sorted.mkString(" "))
