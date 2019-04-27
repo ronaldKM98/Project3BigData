@@ -116,10 +116,6 @@ Enter the news_id (\quit to exit): 17295
 17295, Mar-a-Lago, the Future Winter White House and Home of the Calmer Trump, [17330,
 17283, 15234, 14432, 13564]
 
-## Data Understanding
-
-## Data Preparation
-
 ### Cleaning Datasets
 For this step, special characters, stopwords and words of length one were removed.
 
@@ -132,18 +128,5 @@ For this step, special characters, stopwords and words of length one were remove
   ```
   [!-~]?\\b[\\w]\\b[!-~]?
   ```
-A Dataframe was created with an id column and the title and content columns already clean. 
-
-
-## Modeling
-
-### Search in Inverted Index
-
-### News Clustering
-
-## Evaluation
-
-## Deployment
-
-
+A Dataframe was created with an id column and the title and content columns already clean.
 
