@@ -82,6 +82,7 @@ object TextMining {
       .collect()
       .toMap
 
+    /**
     val result: (String, List[(Int, Int)]) = invertedIndex
       .filter(_._1 == search)
       .collect()
@@ -92,7 +93,7 @@ object TextMining {
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-    table.foreach(println)
+    table.foreach(println)*/
 
 
     // Clustering
@@ -115,17 +116,32 @@ object TextMining {
         }
       }.cache() // Save RDD in memory.
 
-    //newsIndex.take(5).foreach(println)
-    val news_id: Int = 167499
 
-    // TO DO: Check if the given news_id is in the data set.
+    // Change the news id to search for.
+    val news_id: Int = 199218
 
-    implicit val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
-    val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
+    if (titles.getOrElse(news_id, 0) == 0) {
+      print("news not found")
+    } else {
+      // TO DO: Check if the given news_id is in the data set.
 
-    val simil: RDD[(Int, Int, Int)] = newsRDD.map(x => sim(inNews, x))
+      val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
+      val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
 
-    simil.take(5).foreach(println)
+      val simil: DataFrame = {
+        newsRDD.map(x => sim(inNews, x))
+          .toDF
+          .select($"_1".alias("id"), $"_2".alias("distance"), $"_3".alias("n_words"))
+      }
+
+      val sorted: Array[(Int, String)] = simil.sort(desc("n_words"), desc("distance"))
+        .select($"id")
+        .take(5)
+        .map(_.getInt(0))
+        .map(id => (id, titles(id)))
+
+      print(news_id, titles(news_id), sorted.mkString(" "))
+    }
 
     spark.stop()
   }
