@@ -38,8 +38,6 @@ val rawDf: DataFrame = spark
         .withColumn("content", lower($"content"))
         .select($"id".cast(IntegerType).as("id"), $"title", $"content")
 
-rawDf.show()
-
 // COMMAND ----------
 
 //Tokenize title
@@ -129,9 +127,6 @@ val df: DataFrame = newsDF.withColumn("title", removeSpecialCharsUdf($"title"))
                           .withColumn("title", removeWhiteSpacesUdf($"title"))
                           .withColumn("content", removeWhiteSpacesUdf($"content"))
 
-df.show
-            
-
 // COMMAND ----------
 
 // Build inverted index.
@@ -148,12 +143,17 @@ val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
   .groupByKey()
   .mapPartitions{
     _.map {
-      case(word, list) => (word, list.groupBy(_._1).map(pair => (pair._1, pair._2.map(_._2).sum)).toList)
-      // case(palabra, lista) => (palabra, reduceList(lista.toList))
+      case(word, list) =>
+          (word, list.groupBy(_._1).map(
+            pair => (pair._1, pair._2.map(
+              _._2).sum
+            )
+          ).toList.sortWith((k1, k2) => k1._2 > k2._2))
+        // case(palabra, lista) => (palabra, reduceList(lista.toList))
     }
   }.cache() // Save RDD in memory.
 
-invertedIndex.take(5).foreach(println)
+//invertedIndex.take(5).foreach(println)
 
 // COMMAND ----------
 
@@ -173,14 +173,68 @@ invertedIndex.take(5).foreach(println)
 
     val table: List[(Int, Int, String)] = for {
       i <- result._2
+      //title = titles.filter(titles("id") === i._1)
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-    sc.parallelize(table)
-      .toDF("Frequency", "ID", "Title")
-      .orderBy(desc("Frequency"))
-      .collect()
-      .foreach(println)
+table.foreach(println)
+
+// COMMAND ----------
+
+// Group news by similarity
+val newsIndex: RDD[(Int, List[(String, Int)])] = (for {
+  article <- articlesRDD
+  text = article.title + article.content
+  word <- text.split(" ")
+  } yield (article.id, (word, 1)))
+  .groupByKey()
+  .mapPartitions{
+    _.map {
+      case(id, list) => (id, list.groupBy(_._1).map(
+        pair => (pair._1, pair._2.map(
+          _._2).sum
+        )
+      ).toList
+       .sortWith((k1, k2) => k1._2 > k2._2)
+       .take(10))
+    }
+  }.cache() // Save RDD in memory.
+
+//newsIndex.take(5).foreach(println)
+
+// COMMAND ----------
+
+val news_id: Int = 167499
+
+// COMMAND ----------
+
+implicit val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
+val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
+
+// COMMAND ----------
+
+def sim(i: (Int, List[(String, Int)]), j: (Int, List[(String, Int)])): (Int, Int, Int) = {
+  val intersect: List[String] = i._2.map(_._1).intersect(j._2.map(_._1))
+  val total: List[(String, Int)] = i._2 union j._2
+
+  val distance: Int = total.filter(pair => intersect.contains(pair._1)) match {
+    case Nil => 0
+    case x => x.reduce((elem1, elem2) => (
+    elem1._1, elem1._2 + elem2._2))._2 // How to sum consecutive elements.
+  }
+
+  (j._1, distance, intersect.length)
+}
+
+// COMMAND ----------
+
+val simil: RDD[(Int, Int, Int)] = {
+  newsRDD.map(x => sim(inNews, x))
+}
+
+// COMMAND ----------
+
+simil.take(5).foreach(println)
 
 // COMMAND ----------
 

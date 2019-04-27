@@ -44,7 +44,7 @@ object TextMining {
         .option(key = "encoding", value = "UTF-8")
         .option(key = "sep", value = ",")
         .option(key = "inferSchema", value = "true")
-        .csv("src/main/resources/all-the-news/articles1.csv")
+        .csv("src/main/resources/all-the-news/articles3.csv")
         /**"src/main/resources/all-the-news/articles2.csv",
         "src/main/resources/all-the-news/articles3.csv")*/
         .withColumn("title", lower($"title"))
@@ -59,11 +59,16 @@ object TextMining {
     article <- articlesRDD
     text = article.title + article.content
     word <- text.split(" ")
-  } yield (word, (article.id, 1)))
-  .groupByKey()
+    } yield (word, (article.id, 1)))
+    .groupByKey()
     .mapPartitions{
       _.map {
-        case(word, list) => (word, list.groupBy(_._1).map(pair => (pair._1, pair._2.map(_._2).sum)).toList)
+        case(word, list) =>
+          (word, list.groupBy(_._1).map(
+            pair => (pair._1, pair._2.map(
+              _._2).sum
+            )
+          ).toList.sortWith((k1, k2) => k1._2 > k2._2))
         // case(palabra, lista) => (palabra, reduceList(lista.toList))
       }
     }.cache() // Save RDD in memory.
@@ -87,11 +92,40 @@ object TextMining {
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-    sc.parallelize(table)
-      .toDF("Frequency", "ID", "Title")
-      .orderBy(desc("Frequency"))
-      .collect()
-      .foreach(println)
+    table.foreach(println)
+
+
+    // Clustering
+    // Group news by similarity
+    val newsIndex: RDD[(Int, List[(String, Int)])] = (for {
+      article <- articlesRDD
+      text = article.title + article.content
+      word <- text.split(" ")
+    } yield (article.id, (word, 1)))
+      .groupByKey()
+      .mapPartitions{
+        _.map {
+          case(id, list) => (id, list.groupBy(_._1).map(
+            pair => (pair._1, pair._2.map(
+              _._2).sum
+            )
+          ).toList
+            .sortWith((k1, k2) => k1._2 > k2._2)
+            .take(10))
+        }
+      }.cache() // Save RDD in memory.
+
+    //newsIndex.take(5).foreach(println)
+    val news_id: Int = 167499
+
+    // TO DO: Check if the given news_id is in the data set.
+
+    implicit val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
+    val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
+
+    val simil: RDD[(Int, Int, Int)] = newsRDD.map(x => sim(inNews, x))
+
+    simil.take(5).foreach(println)
 
     spark.stop()
   }
@@ -104,34 +138,18 @@ object TextMining {
   }
 
   /**
-    * Receives a String and return its clean version without stopwords nor quotation marks.
-    **/
-  def removeStopWords(content: String): String  = {
-    content match {
-      case "" => ""
-      case str => str.toLowerCase
-                .split(" ")
-                .map(_.replaceAll("""[\p{Punct}]""", ""))
-                .filterNot(word => englishStopWords.contains(word))
-                .mkString(" ")
+    * Similarity function to compare two given articles
+    * */
+  def sim(i: (Int, List[(String, Int)]), j: (Int, List[(String, Int)])): (Int, Int, Int) = {
+    val intersect: List[String] = i._2.map(_._1).intersect(j._2.map(_._1))
+    val total: List[(String, Int)] = i._2 union j._2
+
+    val distance: Int = total.filter(pair => intersect.contains(pair._1)) match {
+      case Nil => 0
+      case x => x.reduce((elem1, elem2) => (
+        elem1._1, elem1._2 + elem2._2))._2 // How to sum consecutive elements.
     }
+
+    (j._1, distance, intersect.length)
   }
-
-  def cleanArticle(article: Article): Article = {
-    val cleanTitle = article.title.toLowerCase
-      .split(" ")
-      .map(_.replaceAll("""[\p{Punct}]""", ""))
-      .filterNot(word => englishStopWords.contains(word))
-      .mkString(" ")
-
-    val cleanContent = article.content.toLowerCase
-      .split(" ")
-      .map(_.replaceAll("""[\p{Punct}]""", ""))
-      .filterNot(word => englishStopWords.contains(word))
-      .mkString(" ")
-
-    Article(article.id, cleanTitle, cleanContent)
-  }
-
-  val removeStopWordsUdf: UserDefinedFunction = udf(removeStopWords (_))
 }
