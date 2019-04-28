@@ -407,6 +407,9 @@ print(news_id, titles(news_id), sorted.mkString(" "))
 ```
 
 ## Evaluation
+To test the code, we created the inverted index and looked for Colombia.
+The following picture shows the result of this step.
+![](./Docs/invertedIndex.png)
 
 ## Deployment
 
