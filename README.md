@@ -381,9 +381,15 @@ val simil: DataFrame = {
 ```
 
 ```scala
-val sorted: DataFrame = simil.sort(desc("n_words"), desc("distance")) 
+val sorted: Array[Int] = simil.sort(desc("n_words"), desc("distance"))
+                              .select($"id")
+                              .take(5)
+                              .map(_.getInt(0))
 ```
 
 ```scala
-val table: (Int, String, Array[Int]) = (news_id, titles(news_id), sorted.select($"id").take(5).map(_.toInt))
+val cluster: (Int, String, Array[Int]) = (news_id, titles(news_id), sorted)
+
+print(news_id, titles(news_id), sorted.mkString(" "))
+
 ```
