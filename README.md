@@ -140,6 +140,8 @@ import org.apache.spark.sql.SparkSession
 
 ## Data Understanding
 
+### Acquisition of the initial dataset
+
 ```scala
 val rawDf: DataFrame = spark
         .read
@@ -153,8 +155,23 @@ val rawDf: DataFrame = spark
         .select($"id".cast(IntegerType).as("id"), $"title", $"content")
 ```
 
+### Exploration of the dataset
+Show the result of transforming input files into a DataFrame, analyze its columns and its values.
+```scala
+rawDF.show()
+```
 
-## Data Preparation (Cleaning Dataset)
+### Identify the quality characteristics of data
+As a text mining project the most important quality issue is based on the text quality by itself, stop words, punctuation marks, white spaces, and so on.
+In addition to this it was found empty rows in the dataset.
+
+
+## Data Preparation
+
+### Data Choosing
+When the input files are transformed into a DataFrame we eliminate the columns that are no relevant for this project, the columns that have been chosen to stay are: Id, Title, Content.
+
+### Data Cleaning
 
 For this step, special characters, stopwords and words of length one were removed.
 
@@ -404,3 +421,9 @@ val cluster: (Int, String, Array[Int]) = (news_id, titles(news_id), sorted)
 print(news_id, titles(news_id), sorted.mkString(" "))
 
 ```
+
+## Evaluation
+
+## Deployment
+
+### The project is deployed in Databricks with the publication of the Scala Notebook.
