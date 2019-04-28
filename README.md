@@ -305,7 +305,7 @@ val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
 
 ```scala
 // Online
-val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
+val search = "Colombia".toLowerCase
 
 val titles: Map[Int, String] = articlesRDD
     .map(article => (article.id, article.title))
