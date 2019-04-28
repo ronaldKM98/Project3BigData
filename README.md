@@ -408,8 +408,8 @@ print(news_id, titles(news_id), sorted.mkString(" "))
 
 ## Evaluation
 To test the code of the inverted index, we looked for the word Colombia.
-
 The following picture shows the result of this step.
+
 ![](./Docs/invertexIndex.png)
 
 ## Deployment
