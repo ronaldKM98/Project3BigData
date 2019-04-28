@@ -201,7 +201,6 @@ val tk = new Tokenizer().setInputCol("title")
 val adf = tk.transform(rawDf.na.drop(Array("title")))
 val titleTokenized: DataFrame = titleTokenizer.transform(adf)
 
-//titleTokenized.show()
 ```
 
 ```scala
@@ -210,10 +209,8 @@ val titleRemover: StopWordsRemover = new StopWordsRemover()
     .setInputCol("title_tokenized")
     .setOutputCol("cleanTitle")
     .setStopWords(stop_words)
-
 val titleDF: DataFrame = titleRemover.transform(titleTokenized)
-               
-//titleDF.show()
+
 ```
 
 ```scala
@@ -223,7 +220,6 @@ val tk1 = new Tokenizer().setInputCol("content")
 val bdf = tk1.transform(titleDF.na.drop(Array("content")))
 val contentTokenized: DataFrame = contentTokenizer.transform(bdf)
 
-//contentTokenized.show()
 ```
 
 ```scala
@@ -232,17 +228,14 @@ val contentRemover: StopWordsRemover = new StopWordsRemover()
   .setInputCol("content_tokenized")
   .setOutputCol("cleanContent")
   .setStopWords(stop_words)
-
 val contentDF: DataFrame = contentRemover.transform(contentTokenized)
 
-//contentDF.show()
 ```
 
 ```scala
 //Create new dataframe with id column and the title and content columns already without stopwords.
 val newsDF: DataFrame = contentDF.select($"id", $"cleanTitle".alias("title"), $"cleanContent".alias("content"))
 
-//newsDF.printSchema()
 ```
 
 ```scala
@@ -251,7 +244,6 @@ def removeSpecialChars(content: Seq[String]): String  = {
   content.mkString(" ")
          .replaceAll("[^a-z\\sA-Z]", "")
 }
-
 val removeSpecialCharsUdf: UserDefinedFunction = udf(removeSpecialChars _)
 ```
 
@@ -260,7 +252,6 @@ val removeSpecialCharsUdf: UserDefinedFunction = udf(removeSpecialChars _)
 def removeSingleChars(content: String): String = {
   content.replaceAll("[!-~]?\\b[\\w]\\b[!-~]?", " ")
 }
-
 val removeSingleCharsUdf: UserDefinedFunction = udf(removeSingleChars _)
 ```
 
@@ -269,7 +260,6 @@ val removeSingleCharsUdf: UserDefinedFunction = udf(removeSingleChars _)
 def removeWhiteSpaces(content: String): String = {
   content.trim.replaceAll(" +"," ")
 }
-
 val removeWhiteSpacesUdf: UserDefinedFunction = udf(removeWhiteSpaces _)
 ```
 
@@ -308,37 +298,31 @@ val invertedIndex: RDD[(String, List[(Int, Int)])] = (for {
               _._2).sum
             )
           ).toList.sortWith((k1, k2) => k1._2 > k2._2))
-        // case(palabra, lista) => (palabra, reduceList(lista.toList))
     }
   }.cache() // Save RDD in memory.
 
-//invertedIndex.take(5).foreach(println)
 ```
 
 ```scala
 // Online
+val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
 
-//TODO: Dataframe 
-    val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
+val titles: Map[Int, String] = articlesRDD
+    .map(article => (article.id, article.title))
+    .collect()
+    .toMap
 
-    val titles: Map[Int, String] =
-    articlesRDD
-      .map(article => (article.id, article.title))
-      .collect()
-      .toMap
+val result: (String, List[(Int, Int)]) = invertedIndex
+    .filter(_._1 == search)
+    .collect()
+    .toList.head
 
-    val result: (String, List[(Int, Int)]) = invertedIndex
-      .filter(_._1 == search)
-      .collect()
-      .toList.head
-
-    val table: List[(Int, Int, String)] = for {
+val table: List[(Int, Int, String)] = for {
       i <- result._2
       //title = titles.filter(titles("id") === i._1)
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-table.take(10).foreach(println)
 ```
 
 
@@ -348,7 +332,7 @@ val newsIndex: RDD[(Int, List[(String, Int)])] = (for {
   article <- articlesRDD
   text = article.title + article.content
   word <- text.split(" ")
-  } yield (article.id, (word, 1)))
+} yield (article.id, (word, 1)))
   .groupByKey()
   .mapPartitions{
     _.map {
@@ -362,7 +346,6 @@ val newsIndex: RDD[(Int, List[(String, Int)])] = (for {
     }
   }.cache() // Save RDD in memory.
 
-//newsIndex.take(5).foreach(println)
 ```
 
 ### News Clustering
