@@ -9,7 +9,8 @@
 
 ## Dev Environment: DataBricks
 
-## Notebook: https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/3862672128133604/3374974215419580/latest.html
+## Notebook: 
+[Databricks Notebook] (https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/3862672128133604/3374974215419580/latest.html)
 
 ## Technical Details
 
