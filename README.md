@@ -122,9 +122,6 @@ Enter the news_id (\quit to exit): 17295
 ## Databricks Notebook - Scala
 
 ```scala
-import java.nio.file.Paths
-
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.STRONG
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql._
@@ -132,13 +129,8 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions._
-
-import scala.io._
 import org.apache.spark.ml.feature.{StopWordsRemover, Tokenizer}
-import org.apache.spark.sql.SparkSession
-
-// For implicit conversions like converting RDDs to DataFrames
-  import spark.implicits._
+import spark.implicits._
 ```
 
 ## Data Understanding
