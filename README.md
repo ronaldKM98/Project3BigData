@@ -10,9 +10,11 @@
 ## Dev Environment: DataBricks
 
 ## Notebook: 
-[Cleaning Datasets notebook]
-[Inverted Index notebook]
-[News Index notebook]
+[Cleaning Datasets notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/4335491689515567/3374974215419580/latest.html)
+
+[Inverted Index notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/228514116036715/3374974215419580/latest.html)
+
+[Similar News notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/228514116036684/3374974215419580/latest.html)
 
 ## Technical Details
 
