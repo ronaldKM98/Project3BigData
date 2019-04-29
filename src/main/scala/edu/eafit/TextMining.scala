@@ -1,12 +1,7 @@
 package edu.eafit
 
-// Stop words.
-import EnglishStopWords.englishStopWords
-
 // Apache Spark.
-import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.{SparkConf}
@@ -44,7 +39,7 @@ object TextMining {
         .option(key = "encoding", value = "UTF-8")
         .option(key = "sep", value = ",")
         .option(key = "inferSchema", value = "true")
-        .csv("src/main/resources/all-the-news/articles3.csv")
+        .csv("src/main/resources/all-the-news/articles1.csv")
         /**"src/main/resources/all-the-news/articles2.csv",
         "src/main/resources/all-the-news/articles3.csv")*/
         .withColumn("title", lower($"title"))
@@ -77,12 +72,11 @@ object TextMining {
     val search = "Colombia".toLowerCase //StdIn.readLine().toLowerCase
 
     val titles: Map[Int, String] =
-    articlesRDD
-      .map(article => (article.id, article.title))
-      .collect()
-      .toMap
+      articlesRDD
+        .map(article => (article.id, article.title))
+        .collect()
+        .toMap
 
-    /**
     val result: (String, List[(Int, Int)]) = invertedIndex
       .filter(_._1 == search)
       .collect()
@@ -93,55 +87,7 @@ object TextMining {
       title = titles(i._1)
     } yield (i._2, i._1, title)
 
-    table.foreach(println)*/
-
-
-    // Clustering
-    // Group news by similarity
-    val newsIndex: RDD[(Int, List[(String, Int)])] = (for {
-      article <- articlesRDD
-      text = article.title + article.content
-      word <- text.split(" ")
-    } yield (article.id, (word, 1)))
-      .groupByKey()
-      .mapPartitions{
-        _.map {
-          case(id, list) => (id, list.groupBy(_._1).map(
-            pair => (pair._1, pair._2.map(
-              _._2).sum
-            )
-          ).toList
-            .sortWith((k1, k2) => k1._2 > k2._2)
-            .take(10))
-        }
-      }.cache() // Save RDD in memory.
-
-
-    // Change the news id to search for.
-    val news_id: Int = 199218
-
-    if (titles.getOrElse(news_id, 0) == 0) {
-      print("news not found")
-    } else {
-      // TO DO: Check if the given news_id is in the data set.
-
-      val inNews: (Int, List[(String, Int)]) = newsIndex.filter(_._1 == news_id).first
-      val newsRDD: RDD[(Int, List[(String, Int)])] = newsIndex.filter(_._1 != news_id)
-
-      val simil: DataFrame = {
-        newsRDD.map(x => sim(inNews, x))
-          .toDF
-          .select($"_1".alias("id"), $"_2".alias("distance"), $"_3".alias("n_words"))
-      }
-
-      val sorted: Array[(Int, String)] = simil.sort(desc("n_words"), desc("distance"))
-        .select($"id")
-        .take(5)
-        .map(_.getInt(0))
-        .map(id => (id, titles(id)))
-
-      print(news_id, titles(news_id), sorted.mkString(" "))
-    }
+    table.foreach(println)
 
     spark.stop()
   }
@@ -151,21 +97,5 @@ object TextMining {
       //id, list(f)
       pair => (pair._1, pair._2.map(_._2).sum)
     ).toList
-  }
-
-  /**
-    * Similarity function to compare two given articles
-    * */
-  def sim(i: (Int, List[(String, Int)]), j: (Int, List[(String, Int)])): (Int, Int, Int) = {
-    val intersect: List[String] = i._2.map(_._1).intersect(j._2.map(_._1))
-    val total: List[(String, Int)] = i._2 union j._2
-
-    val distance: Int = total.filter(pair => intersect.contains(pair._1)) match {
-      case Nil => 0
-      case x => x.reduce((elem1, elem2) => (
-        elem1._1, elem1._2 + elem2._2))._2 // How to sum consecutive elements.
-    }
-
-    (j._1, distance, intersect.length)
   }
 }

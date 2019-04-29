@@ -10,7 +10,11 @@
 ## Dev Environment: DataBricks
 
 ## Notebook: 
-[Databricks Notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/3862672128133604/3374974215419580/latest.html)
+[Cleaning Datasets notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/4335491689515567/3374974215419580/latest.html)
+
+[Inverted Index notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/228514116036715/3374974215419580/latest.html)
+
+[Similar News notebook](https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/4563577665867992/228514116036684/3374974215419580/latest.html)
 
 ## Technical Details
 
@@ -120,9 +124,6 @@ Enter the news_id (\quit to exit): 17295
 ## Databricks Notebook - Scala
 
 ```scala
-import java.nio.file.Paths
-
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.STRONG
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql._
@@ -130,13 +131,8 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions._
-
-import scala.io._
 import org.apache.spark.ml.feature.{StopWordsRemover, Tokenizer}
-import org.apache.spark.sql.SparkSession
-
-// For implicit conversions like converting RDDs to DataFrames
-  import spark.implicits._
+import spark.implicits._
 ```
 
 ## Data Understanding
