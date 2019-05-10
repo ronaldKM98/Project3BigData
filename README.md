@@ -1,7 +1,7 @@
 # Project 3 – Big Data / Spark: Text Mining for news processing
 
 ## Team Members
-* Ronald Cardona Martínez - rcardo11@eafit.edu.co - 
+* Ronald Cardona Martínez - rcardo11@eafit.edu.co - [VIDEO](https://youtu.be/7U9vJoTYjyQ)
 
 * Alex Montoya Franco - amonto69@eafit.edu.co - [VIDEO](https://youtu.be/BGAoTrefk7M)
 
