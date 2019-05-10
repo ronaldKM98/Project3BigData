@@ -408,6 +408,13 @@ The following picture shows the result of this step.
 
 ![](./Docs/invertexIndex.png)
 
+To test the code of the news similarity, we looked for the news id 167499.
+The following picture shows the result of this step.
+
+![](./Docs/newsIndex.png)
+
+It can be shown that the news entered is related to Zika and the 5 similar news, most of them also talk about Zika.
+
 ## Deployment
 
 ### The project is deployed in Databricks with the publication of the Scala Notebook.
