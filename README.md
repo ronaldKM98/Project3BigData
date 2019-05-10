@@ -5,7 +5,7 @@
 
 * Alex Montoya Franco - amonto69@eafit.edu.co
 
-* Camila White Romero - cwhiter@eafit.edu.co
+* Camila White Romero - cwhiter@eafit.edu.co - [VIDEO](https://youtu.be/fm_rNciNsLE)
 
 ## Dev Environment: DataBricks
 
